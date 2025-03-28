@@ -1,8 +1,6 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PROJECT_S19.DTOs.Artist;
 using PROJECT_S19.DTOs.Event;
 using PROJECT_S19.DTOs.Ticket;
 using PROJECT_S19.Services;
@@ -24,18 +22,26 @@ namespace PROJECT_S19.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTicket([FromBody] CreateTicketDto createTicketDto)
         {
-            var user = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email); 
-            var email = user.Value;
+            try
+            {
+                var user = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
+                var email = user.Value;
 
-            var success = await _ticketService.CreateTicketAsync(createTicketDto, email);
-            if (success)
-            {
-                return Ok(new { message = "Ticket successfully purchased!" });
+                var success = await _ticketService.CreateTicketAsync(createTicketDto, email);
+                if (success)
+                {
+                    return Ok(new { message = "Ticket successfully purchased!" });
+                }
+                else
+                {
+                    return BadRequest(new { message = "Ticket is already purchased or something went wrong." });
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return BadRequest(new { message = "Ticket is already purchased or something went wrong." });
+                return StatusCode(500, ex.Message);
             }
+
         }
 
         [HttpDelete("{id:int}")]

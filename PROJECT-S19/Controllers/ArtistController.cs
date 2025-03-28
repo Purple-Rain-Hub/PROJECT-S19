@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PROJECT_S19.DTOs.Account;
 using PROJECT_S19.DTOs.Artist;
 using PROJECT_S19.Services;
+using Serilog;
 
 namespace PROJECT_S19.Controllers
 {
@@ -12,25 +14,36 @@ namespace PROJECT_S19.Controllers
     public class ArtistController : ControllerBase
     {
         private readonly ArtistService _artistService;
+        //INIEZIONE LOG DI SERILOG
+        private readonly ILogger<ArtistService> _logger;
 
-        public ArtistController(ArtistService artistService)
+        public ArtistController(ArtistService artistService, ILogger<ArtistService> logger)
         {
             _artistService = artistService;
+            _logger = logger;
         }
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateArtist([FromBody] CreateArtistDto createArtistDto)
         {
-            var success = await _artistService.CreateArtistAsync(createArtistDto);
-            if (success)
+            try
             {
-                return Ok(new { message = "Artist successfully registered!" });
+                var success = await _artistService.CreateArtistAsync(createArtistDto);
+                if (success)
+                {
+                    return Ok(new { message = "Artist successfully registered!" });
+                }
+                else
+                {
+                    return BadRequest(new { message = "Artist is already registered or something went wrong." });
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return BadRequest(new { message = "Artist is already registered or something went wrong." });
+                return StatusCode(500, ex.Message);
             }
+
         }
 
         [HttpPut]
@@ -86,6 +99,9 @@ namespace PROJECT_S19.Controllers
                 var count = artists.Count();
 
                 var text = count == 1 ? $"{count} artist found" : $"{count} artists found";
+                
+                //Stampo nel log e nel txt il ritorno della GET
+                _logger.LogInformation($"Requesting Artist info: {JsonSerializer.Serialize(artists, new JsonSerializerOptions() { WriteIndented = true })}");
 
                 return Ok(new
                 GetArtistResponseDto()

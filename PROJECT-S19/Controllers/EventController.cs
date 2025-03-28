@@ -21,15 +21,23 @@ namespace PROJECT_S19.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateEvent([FromBody] CreateEventDto createEventDto)
         {
-            var success = await _eventService.CreateEventAsync(createEventDto);
-            if (success)
+            try
             {
-                return Ok(new { message = "Event successfully registered!" });
+                var success = await _eventService.CreateEventAsync(createEventDto);
+                if (success)
+                {
+                    return Ok(new { message = "Event successfully registered!" });
+                }
+                else
+                {
+                    return BadRequest(new { message = "Event is already registered or something went wrong." });
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return BadRequest(new { message = "Event is already registered or something went wrong." });
+                return StatusCode(500, ex.Message);
             }
+
         }
 
         [HttpPut]

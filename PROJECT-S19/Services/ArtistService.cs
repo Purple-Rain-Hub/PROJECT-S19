@@ -9,9 +9,13 @@ namespace PROJECT_S19.Services
     public class ArtistService
     {
         private readonly PROJECT_S19DbContext _context;
-        public ArtistService(PROJECT_S19DbContext context)
+        //INIEZIONE LOG DI SERILOG
+        private readonly ILogger<ArtistService> _logger;
+
+        public ArtistService(PROJECT_S19DbContext context, ILogger<ArtistService> logger)
         {
             _context = context;
+            _logger = logger;
         }
         public async Task<bool> SaveAsync()
         {
@@ -39,8 +43,10 @@ namespace PROJECT_S19.Services
                 _context.Artists.Add(artist);
                 return await SaveAsync();
             }
-            catch
+            catch (Exception ex)
             {
+                //USO DEL SERILOG PER L'ECCEZIONE
+                _logger.LogError(ex, ex.Message);
                 return false;
             }
         }
